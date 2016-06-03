@@ -4,9 +4,12 @@
 #include <ctime>
 #include <cstdlib>
 #include <vector>
+#include <thread>
 using namespace std;
 
 const int deck_size = 52; //Used as array size throughout
+int player_score = 0;
+int dealer_score = 0;
 
 enum CardRank
 {
@@ -201,6 +204,7 @@ bool hitStand()
 	cin >> choice;
 	if (choice == 'h' || choice == 'H') return true;
 	else if (choice == 's' || choice == 'S') return false;
+	
 }
 
 void deal(int &p, int &d, Card* cardPtr);
@@ -255,7 +259,9 @@ int playerTurn(int &p, Card* cardPtr)
 		cout << '\n';
 		if (p > 21)
 		{
+			this_thread::sleep_for(1s);
 			cout << "Bust!" << endl;
+			++dealer_score;
 			break;
 		}
 	}
@@ -270,15 +276,20 @@ void dealerTurn(int &p, int &d, Card* cardPtr)
 	d += getCardValue(*cardPtr++);
 	cout << '\n';
 
+	this_thread::sleep_for(1s);
+
 	while (d < p && d < 17)
 	{
 		cout << "Dealer hits." << endl;
+		this_thread::sleep_for(1s);
 		printCard(*cardPtr);
 		d += getCardValue(*cardPtr++);
 		cout << '\n';
+		this_thread::sleep_for(1s);
 		if (d > 21)
 		{
 			cout << "Dealer busts! You win." << endl;
+			++player_score;
 			break;
 		}
 	}
@@ -288,9 +299,16 @@ void winner(const int p, const int d)
 {
 	if (p > d)
 	{
+		this_thread::sleep_for(1s);
 		cout << "You win!" << endl;
+		++player_score;
 	}
-	else cout << "Dealer wins." << endl;
+	else
+	{
+		this_thread::sleep_for(1s);
+		cout << "Dealer wins." << endl;
+		++dealer_score;
+	}
 }
 
 
@@ -299,11 +317,13 @@ int main()
 	array<Card, deck_size> alans_deck = {R_2,CLUBS };
 	populateDeck(alans_deck);
 	initilizeRand();
-	cout << "Black Jack\nPress 'h' to hit and 's' to stand" << endl;
+	cout << "Black Jack\nPress 'h' to hit and 's' to stand\nAce is 11\n" << endl;
 	while (true)
 	{
 		shuffleDeck(alans_deck);
+		this_thread::sleep_for(3s);
 		playBlackJack(alans_deck);
+		cout << "You: " << player_score << "\tDealer: " << dealer_score << endl;
 	}
 	return 0;
 }
