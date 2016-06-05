@@ -7,8 +7,11 @@
 #include <thread>
 using namespace std;
 
-const int deck_size = 52; //Used as array size throughout
-int player_score = 0;
+//Used as array size throughout
+const int deck_size = 52;
+
+//Scores tracked throughout game
+int player_score = 0; 
 int dealer_score = 0;
 
 enum CardRank
@@ -44,7 +47,14 @@ struct Card
 	CardSuit suit;
 };
 
-void populateDeck(array<Card,deck_size> &deck)
+//Declarations
+void deal(int &p, int &d, Card *&cardPtr);
+void playerTurn(int &p, Card *&cardPt);
+void dealerTurn(int &p, int &d, Card *&cardPtr);
+void winner(const int p, const int d);
+
+//Populate array with a Card of each Rank & Suit
+void populateDeck(array<Card, deck_size> &deck)
 {
 	int place = 0;
 	for (int suit = 0; suit < MAX_SUIT; ++suit)
@@ -58,6 +68,7 @@ void populateDeck(array<Card,deck_size> &deck)
 	}
 }
 
+//Print "RANK of SUIT" for a given Card
 void printCard(const Card &card)
 {
 	switch (card.rank)
@@ -128,6 +139,7 @@ void printCard(const Card &card)
 	}
 }
 
+//Swap two cards, used for shuffling
 void swapCards(Card &a, Card &b)
 {
 	Card temp = a;
@@ -135,6 +147,7 @@ void swapCards(Card &a, Card &b)
 	b = temp;
 }
 
+//Generate an int value based on card Rank
 int getCardValue(const Card &c)
 {
 	switch (c.rank)
@@ -174,11 +187,19 @@ int getCardValue(const Card &c)
 	}
 }
 
+//From LearnCPP.com lesson
 int getRandomNumber(int min, int max)
 {
 	static const double fraction = 1.0 / (static_cast<double>(RAND_MAX) + 1.0);  // static used for efficiency, so we only calculate this value once
 																				 // evenly distribute the random number across our range
 	return static_cast<int>(rand() * fraction * (max - min + 1) + min);
+}
+
+//Initilize Random numbers for Windows
+void initilizeRand()
+{
+	srand(static_cast<unsigned int>(time(0)));
+	rand();
 }
 
 void shuffleDeck(array<Card, deck_size> &deck)
@@ -190,12 +211,6 @@ void shuffleDeck(array<Card, deck_size> &deck)
 	}
 }
 
-void initilizeRand()
-{
-	srand(static_cast<unsigned int>(time(0)));
-	rand();
-}
-
 //Player promted to hit or stand
 bool hitStand()
 {
@@ -204,35 +219,40 @@ bool hitStand()
 	cin >> choice;
 	if (choice == 'h' || choice == 'H') return true;
 	else if (choice == 's' || choice == 'S') return false;
-	
+
 }
 
-void deal(int &p, int &d, Card* cardPtr);
-
-int playerTurn(int &p, Card* cardPt);
-
-void dealerTurn(int &p, int &d, Card* cardPtr);
-
-void winner(const int p, const int d);
-
+//A full round of Black Jack the goes until there is a winner
 void playBlackJack(array<Card, deck_size> deck)
 {
 	Card *cardPtr = &deck[0]; //Point to first card in deck
+
+	//Keeps track of numeric Rank totals for one round
 	int dealer_total = 0;
 	int player_total = 0;
 
 	deal(player_total, dealer_total, cardPtr);
-	if (player_total > 21 || dealer_total > 21) return; //End game if 2 Aces = bust on deal
-	cardPtr = cardPtr + 3; //Point to 3rd card since 1st 3 are dealt
-	cardPtr += playerTurn(player_total, cardPtr); //Player's turn & point to next card after
-	if (player_total > 21) return; //New game if player busts
+
+	//End game if 2 Aces = bust on deal
+	if (player_total > 21 || dealer_total > 21) return;
+	
+	playerTurn(player_total, cardPtr);
+
+	//New game if player busts
+	if (player_total > 21) return;
+
 	dealerTurn(player_total, dealer_total, cardPtr);
-	if (dealer_total > 21) return; //New game if dealer busts
+
+	//New game if dealer busts
+	if (dealer_total > 21) return;
+
+	//If neither busts, determine winner
 	cout << "Dealer stays." << endl;
 	winner(player_total, dealer_total);
 }
 
-void deal(int &p, int &d, Card* cardPtr)
+//Gives the dealer one "face up" card and the player two
+void deal(int &p, int &d, Card *&cardPtr)
 {
 	cout << "\nDealer is showing: ";
 	printCard(*cardPtr);
@@ -248,14 +268,12 @@ void deal(int &p, int &d, Card* cardPtr)
 	cout << '\n';
 }
 
-int playerTurn(int &p, Card* cardPtr)
+void playerTurn(int &p, Card *&cardPtr)
 {
-	int hits = 0;
 	while (hitStand())
 	{
 		printCard(*cardPtr);
 		p += getCardValue(*cardPtr++);
-		++hits;
 		cout << '\n';
 		if (p > 21)
 		{
@@ -265,11 +283,9 @@ int playerTurn(int &p, Card* cardPtr)
 			break;
 		}
 	}
-
-	return hits;
 }
 
-void dealerTurn(int &p, int &d, Card* cardPtr)
+void dealerTurn(int &p, int &d, Card *&cardPtr)
 {
 	cout << "Dealer flips a ";
 	printCard(*cardPtr);
@@ -314,16 +330,22 @@ void winner(const int p, const int d)
 
 int main()
 {
-	array<Card, deck_size> alans_deck = {R_2,CLUBS };
-	populateDeck(alans_deck);
 	initilizeRand();
-	cout << "Black Jack\nPress 'h' to hit and 's' to stand\nAce is 11\n" << endl;
+
+	//Create array for deck of cards
+	array<Card, deck_size> game_deck{};
+	populateDeck(game_deck);
+
+	cout << "Black Jack\nPress 'h' to hit and 's' to stand\n"
+		 << "Ace is 11\nDeck is shuffled each round\n" << endl;
+
+	//An infinite loop of rounds
 	while (true)
 	{
-		shuffleDeck(alans_deck);
-		this_thread::sleep_for(3s);
-		playBlackJack(alans_deck);
+		shuffleDeck(game_deck);
+		this_thread::sleep_for(2s);
+		playBlackJack(game_deck);
 		cout << "You: " << player_score << "\tDealer: " << dealer_score << endl;
 	}
-	return 0;
+
 }
